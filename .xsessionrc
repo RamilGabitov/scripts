@@ -1,0 +1,20 @@
+if [ $# -eq 0 ]; then
+    sleep 2
+fi
+device=$(udevadm info --export-db | awk '/ID_INPUT_TOUCHSCREEN=1/' RS= | grep '^E: NAME=' | cut -d '"' -f 2)
+if [ "$device" = "" ]; then
+    device="USB\sTouch"
+fi
+xrandr | grep -Po "\s+connected\s+\d+"
+if [ $? -eq 0 ]; then
+    xrandr --output VGA-1 --left-of HDMI-1
+    xinput list | grep -Po "$device\s+id=\d+"
+    if [ $? -eq 0 ]; then
+        xinput --map-to-output $(xinput list | grep -Po "$device\s+id=\d+" | cut -d "=" -f 2) HDMI-1
+    fi
+else
+    xinput list | grep -Po "$device\s+id=\d+"
+    if [ $? -eq 0 ]; then
+        xinput --map-to-output $(xinput list | grep -Po "$device\s+id=\d+" | cut -d "=" -f 2) $(xrandr | grep -Po "[-A-Z0-9]+\s+connected\s+primary" | cut -d ' ' -f 1)
+    fi
+fi
